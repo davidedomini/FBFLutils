@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="FLutils",                     # This is the name of the package
-    version="0.0.4",                        # The initial release version
+    version="0.0.6",                        # The initial release version
     author="Davide Domini",                     # Full name of the author
     description="Test how to create a python package",
     long_description="Test how to create a python package",      # Long description read from the the readme file

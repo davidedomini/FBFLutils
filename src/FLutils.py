@@ -6,6 +6,7 @@ import numpy as np
 from torch.utils.data import DataLoader, Dataset
 import torch.nn.functional as F
 
+
 class CNNMnist(nn.Module):
 
     def __init__(self):
@@ -123,4 +124,5 @@ def test_data_loader(dataset, idxs):
 
 def mnist_cnn_factory():
     model = CNNMnist()
+    model.load_state_dict(torch.load('networks/initialmodel'))
     return model
