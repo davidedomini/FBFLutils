@@ -3,7 +3,8 @@ import copy
 from torch import nn
 import json
 import numpy as np
-from torch.utils.data import DataLoader, Dataset
+import pandas as pd
+from torch.utils.data import DataLoader, Dataset, random_split
 import torch.nn.functional as F
 
 
@@ -26,6 +27,19 @@ class CNNMnist(nn.Module):
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
 
+class MLP(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(MLP, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x):
+        x = F.relu(self.fc1(x))
+        x = F.dropout(x, training=self.training)
+        x = self.fc2(x)
+        return F.log_softmax(x, dim=1)
+
+
 class DatasetSplit(Dataset):
     """An abstract Dataset class wrapped around Pytorch Dataset class.
     """
@@ -40,6 +54,20 @@ class DatasetSplit(Dataset):
     def __getitem__(self, item):
         image, label = self.dataset[self.idxs[item]]
         return torch.tensor(image), torch.tensor(label)
+
+
+class EmailDataset(Dataset):
+    def __init__(self, dataframe):
+        self.dataframe = dataframe
+
+    def __getitem__(self, index):
+        row = self.dataframe.iloc[index]
+        features = torch.tensor(row.drop('class').values, dtype=torch.float32)
+        label = torch.tensor(row['class'], dtype=torch.long)
+        return features, label
+
+    def __len__(self):
+        return len(self.dataframe)
 
 
 def average_weights(w):
@@ -68,7 +96,6 @@ def update_weights(model, epochs, data_loader, device):
             loss = criterion(log_probs, labels)
             loss.backward()
             optimizer.step()
-            # TODO - should I log something here?
             batch_loss.append(loss.item())
         mean_epoch_loss = sum(batch_loss) / len(batch_loss)
         epoch_loss.append(mean_epoch_loss)
@@ -122,7 +149,24 @@ def test_data_loader(dataset, idxs):
                             batch_size=int(len(idxs_test) / 10), shuffle=False)
     return testloader
 
+
+#def spamemail_train_val_loader(id):
+#    df = pd.read_csv(f'data/federated_train/spambase_user{id}.csv')
+#    dataset = EmailDataset(dataframe=df)
+#    train_set, val_set = random_split(dataset, [450, 50])
+#    td = DataLoader(train_set, batch_size=25, shuffle=True)
+#    vd = DataLoader(val_set, batch_size=25, shuffle=False)
+#    return td, vd
+
+
+
 def mnist_cnn_factory():
     model = CNNMnist()
-    model.load_state_dict(torch.load('networks/initialmodel'))
+    model.load_state_dict(torch.load('networks/initialmodel_mnist'))
     return model
+
+
+#def spamemail_mlp_factory():
+#    model = MLP(57, 128, 2)
+#    model.load_state_dict(torch.load('networks/initialmodel_spambase'))
+#    return model
